@@ -14,13 +14,17 @@ declare global {
   interface Window {
     dataLayer: unknown[]
     gtag?: (...args: unknown[]) => void
+    fbq?: (...args: unknown[]) => void
+    _fbq?: unknown
   }
 }
 
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ''
 export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || ''
+export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || '939749441871991'
 
 export const analyticsEnabled = Boolean(GA_MEASUREMENT_ID || GOOGLE_ADS_ID)
+export const metaPixelEnabled = Boolean(META_PIXEL_ID)
 
 export function trackEvent(name: string, params: AnalyticsParams = {}) {
   if (!analyticsEnabled || typeof window === 'undefined' || typeof window.gtag !== 'function') {
@@ -60,4 +64,51 @@ export function trackPurchase(params: {
   items: AnalyticsItem[]
 }) {
   trackEvent('purchase', params)
+}
+
+export function trackMetaEvent(name: string, params?: Record<string, string | number>) {
+  if (!metaPixelEnabled || typeof window === 'undefined' || typeof window.fbq !== 'function') {
+    return
+  }
+
+  if (params) {
+    window.fbq('track', name, params)
+    return
+  }
+
+  window.fbq('track', name)
+}
+
+export function trackMetaPageView(path?: string) {
+  if (!metaPixelEnabled || typeof window === 'undefined' || typeof window.fbq !== 'function') {
+    return
+  }
+
+  if (path) {
+    window.fbq('trackCustom', 'VirtualPageView', {
+      page_path: path,
+    })
+  }
+
+  window.fbq('track', 'PageView')
+}
+
+export function trackMetaInitiateCheckout(params: {
+  value: number
+  currency: string
+}) {
+  trackMetaEvent('InitiateCheckout', params)
+}
+
+export function trackMetaPurchase(params: {
+  value: number
+  currency: string
+  order_id: string
+}) {
+  trackMetaEvent('Purchase', {
+    value: params.value,
+    currency: params.currency,
+    content_type: 'product',
+    order_id: params.order_id,
+  })
 }

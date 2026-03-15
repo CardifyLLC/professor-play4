@@ -39,6 +39,9 @@ const siteLinks = [
 const legalLinks = [
   { href: '/privacy', label: 'Privacy Policy', icon: ShieldCheck },
   { href: '/terms', label: 'Terms of Service', icon: Scale },
+  { href: '/refund', label: 'Refund & Guarantee', icon: Scale },
+  { href: '/cookies', label: 'Cookie Policy', icon: ShieldCheck },
+  { href: '/acceptable-use', label: 'Acceptable Use Policy', icon: ShieldCheck },
   { href: '/dmca', label: 'DMCA Policy', icon: ShieldCheck },
   { href: '/support', label: 'Support', icon: LifeBuoy },
 ]

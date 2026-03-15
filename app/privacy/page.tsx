@@ -16,7 +16,7 @@ export default function PrivacyPage() {
       <div className="space-y-10">
         <section className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
-            Last updated: March 13, 2026
+            Last updated: March 14, 2026
           </p>
           <p className="text-base leading-8 text-slate-600 dark:text-slate-300">
             <span className="font-semibold text-slate-900 dark:text-white">TCGPlaytest</span> operates{' '}
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Information Collected Automatically</h3>
               <ul className="mt-3 space-y-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
                 <li><span className="font-semibold text-slate-900 dark:text-white">Usage Data:</span> Pages visited, time spent on site, browser type, device type, and referring URL.</li>
-                <li><span className="font-semibold text-slate-900 dark:text-white">Cookies:</span> Essential cookies for site functionality and analytics cookies to understand how visitors use our site.</li>
+                <li><span className="font-semibold text-slate-900 dark:text-white">Cookies:</span> Essential cookies for site functionality plus analytics and advertising cookies when you consent to them.</li>
                 <li><span className="font-semibold text-slate-900 dark:text-white">IP Address:</span> Collected for fraud prevention and approximate geolocation.</li>
               </ul>
             </div>
@@ -86,6 +86,16 @@ export default function PrivacyPage() {
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">Google Analytics</td>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">Website analytics</td>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">policies.google.com/privacy</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">Google Ads</td>
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">Advertising conversion tracking</td>
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">policies.google.com/privacy</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">Meta Pixel</td>
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">Advertising conversion tracking</td>
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">facebook.com/privacy/policy</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">Vercel</td>

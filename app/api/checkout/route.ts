@@ -736,9 +736,9 @@ export async function POST(req: NextRequest) {
         payment_method_types: ['card'],
         line_items: lineItems,
         mode: 'payment',
-        automatic_tax: {
-          enabled: true,
-        },
+        // automatic_tax: {
+        //   enabled: true,
+        // },
         success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/#pricing-view`,
         customer_email: shippingAddress.email,

@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import { X, ShoppingCart, Lock, Ticket } from 'lucide-react'
 import { useApp } from '@/contexts/AppContext'
 import { compressImage } from '@/utils/imageCompression'
-import { trackBeginCheckout, type AnalyticsItem } from '@/utils/analytics'
+import { trackBeginCheckout, trackMetaInitiateCheckout, type AnalyticsItem } from '@/utils/analytics'
 
 type AppliedCoupon = {
   code: string
@@ -129,6 +129,10 @@ export default function CheckoutModal() {
             value: Number(total.toFixed(2)),
             coupon: appliedCoupon?.code,
             items: analyticsItems,
+          })
+          trackMetaInitiateCheckout({
+            value: Number(total.toFixed(2)),
+            currency: 'USD',
           })
         }
         return true

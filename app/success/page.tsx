@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircle } from 'lucide-react'
 import Link from 'next/link'
-import { trackPurchase, type AnalyticsItem } from '@/utils/analytics'
+import { trackMetaPurchase, trackPurchase, type AnalyticsItem } from '@/utils/analytics'
 
 // Force dynamic rendering since we use searchParams
 export const dynamic = 'force-dynamic'
@@ -65,6 +65,11 @@ function SuccessContent() {
           shipping: data.shipping,
           coupon: data.coupon,
           items: data.items,
+        })
+        trackMetaPurchase({
+          order_id: data.transactionId,
+          value: data.value,
+          currency: data.currency,
         })
 
         hasTrackedPurchase.current = true

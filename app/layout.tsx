@@ -3,8 +3,10 @@ import Script from 'next/script'
 import { Suspense } from 'react'
 import './globals.css'
 import BrowserCompatibility from '@/components/BrowserCompatibility'
+import CookieConsentBanner from '@/components/CookieConsentBanner'
 import { ExtensionErrorBoundary } from '@/components/ExtensionErrorBoundary'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
+import MetaPixel from '@/components/MetaPixel'
 import { AppProvider } from '@/contexts/AppContext'
 
 export const metadata: Metadata = {
@@ -87,7 +89,9 @@ export default function RootLayout({
         <AppProvider>
           <Suspense fallback={null}>
             <GoogleAnalytics />
+            <MetaPixel />
           </Suspense>
+          <CookieConsentBanner />
           <BrowserCompatibility />
           <ExtensionErrorBoundary>
             {children}

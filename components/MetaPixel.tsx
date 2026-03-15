@@ -3,15 +3,10 @@
 import { useEffect, useState } from 'react'
 import Script from 'next/script'
 import { usePathname, useSearchParams } from 'next/navigation'
-import {
-  GA_MEASUREMENT_ID,
-  GOOGLE_ADS_ID,
-  analyticsEnabled,
-  trackPageView,
-} from '@/utils/analytics'
+import { META_PIXEL_ID, metaPixelEnabled, trackMetaPageView } from '@/utils/analytics'
 import { COOKIE_CONSENT_EVENT, canUseNonEssentialCookies } from '@/utils/cookieConsent'
 
-export default function GoogleAnalytics() {
+export default function MetaPixel() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [canTrack, setCanTrack] = useState(false)
@@ -32,38 +27,36 @@ export default function GoogleAnalytics() {
   }, [])
 
   useEffect(() => {
-    if (!analyticsEnabled || !canTrack || !pathname) {
+    if (!metaPixelEnabled || !canTrack || !pathname) {
       return
     }
 
     const query = searchParams?.toString()
     const path = query ? `${pathname}?${query}` : pathname
-    trackPageView(path)
+    trackMetaPageView(path)
   }, [canTrack, pathname, searchParams])
 
-  if (!analyticsEnabled || !canTrack) {
+  if (!metaPixelEnabled || !canTrack) {
     return null
   }
-
-  const primaryTagId = GA_MEASUREMENT_ID || GOOGLE_ADS_ID
-  const tagIds = [GA_MEASUREMENT_ID, GOOGLE_ADS_ID].filter(Boolean)
 
   return (
     <>
       <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${primaryTagId}`}
-        strategy="afterInteractive"
-      />
-      <Script
-        id="google-tag-manager"
+        id="meta-pixel"
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            window.gtag = gtag;
-            gtag('js', new Date());
-            ${tagIds.map((id) => `gtag('config', '${id}', { send_page_view: false });`).join('\n')}
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '${META_PIXEL_ID}');
+            fbq('track', 'PageView');
           `,
         }}
       />
