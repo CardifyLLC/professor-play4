@@ -15,7 +15,7 @@ interface DesignStepperProps {
 export default function DesignStepper({ onExit }: DesignStepperProps) {
   const { currentStep, setCurrentStep, deck } = useApp()
   const [totalPrice, setTotalPrice] = useState('$0.00')
-  const [deckStats, setDeckStats] = useState('0 Cards • S33 Stock')
+  const [deckStats, setDeckStats] = useState('0 Cards • premium cored cardstock')
 
   useEffect(() => {
     const stats = updateDeckStats(deck)

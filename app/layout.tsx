@@ -3,6 +3,7 @@ import Script from 'next/script'
 import './globals.css'
 import BrowserCompatibility from '@/components/BrowserCompatibility'
 import { ExtensionErrorBoundary } from '@/components/ExtensionErrorBoundary'
+import GoogleAnalytics from '@/components/GoogleAnalytics'
 import { AppProvider } from '@/contexts/AppContext'
 
 export const metadata: Metadata = {
@@ -83,6 +84,7 @@ export default function RootLayout({
       </head>
       <body className="text-slate-800 bg-white dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
         <AppProvider>
+          <GoogleAnalytics />
           <BrowserCompatibility />
           <ExtensionErrorBoundary>
             {children}

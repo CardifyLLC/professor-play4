@@ -660,6 +660,8 @@ export async function POST(req: NextRequest) {
       pricePerCard: pricePerCard.toString(),
       finishSurcharge: finishSurcharge.toFixed(2),
       discountAmount: discountAmount.toFixed(2),
+      shippingCost: shippingCost.toFixed(2),
+      totalAmount: totalAmount.toFixed(2),
       shippingCountry: shippingCountry,
       tempOrderId: tempOrderId,
       hasImages: (allImageUrls.length > 0 || (cardImages && cardImages.length > 0)) ? 'true' : 'false',

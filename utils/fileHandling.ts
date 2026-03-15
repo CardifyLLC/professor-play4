@@ -42,8 +42,11 @@ export async function handleFiles(
             back: null,
             originalBack: null,
             trimMm: 2.5,
+            frontTrimMm: 2.5,
+            backTrimMm: 2.5,
             bleedMm: 2.0,
             hasBleed: false,
+            bleedSource: 'none',
             finish: 'standard',
             quantity: 1,
           }

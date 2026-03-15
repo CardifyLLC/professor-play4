@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
 
+export type BleedSource = 'none' | 'added' | 'existing'
+
 export interface Card {
   id: string
   originalFront: string | null
@@ -9,8 +11,11 @@ export interface Card {
   back: string | null
   originalBack: string | null
   trimMm: number
+  frontTrimMm?: number
+  backTrimMm?: number
   bleedMm: number
   hasBleed: boolean
+  bleedSource?: BleedSource
   finish: string
   quantity: number
   printsUri?: string
@@ -26,6 +31,7 @@ export interface GlobalBack {
   trimMm: number
   bleedMm: number
   hasBleed: boolean
+  bleedSource?: BleedSource
 }
 
 export interface UploadedXmlFile {
@@ -70,6 +76,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     trimMm: 2.5,
     bleedMm: 2.0,
     hasBleed: false,
+    bleedSource: 'none',
   })
   const [uploadedXmlFile, setUploadedXmlFile] = useState<UploadedXmlFile | null>(null)
   const [currentCardIndex, setCurrentCardIndex] = useState(-1)

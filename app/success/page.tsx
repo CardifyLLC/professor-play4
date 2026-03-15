@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircle } from 'lucide-react'
 import Link from 'next/link'
+import { trackPurchase, type AnalyticsItem } from '@/utils/analytics'
 
 // Force dynamic rendering since we use searchParams
 export const dynamic = 'force-dynamic'
@@ -12,11 +13,75 @@ function SuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
   const [loading, setLoading] = useState(true)
+  const [orderValue, setOrderValue] = useState<number | null>(null)
+  const hasTrackedPurchase = useRef(false)
 
   useEffect(() => {
     // Simulate loading state
     setTimeout(() => setLoading(false), 1000)
   }, [])
+
+  useEffect(() => {
+    if (!sessionId || hasTrackedPurchase.current) {
+      return
+    }
+
+    const storageKey = `purchase-tracked:${sessionId}`
+    if (typeof window !== 'undefined' && window.sessionStorage.getItem(storageKey) === 'true') {
+      hasTrackedPurchase.current = true
+      return
+    }
+
+    let cancelled = false
+
+    const trackCompletedPurchase = async () => {
+      try {
+        const response = await fetch(`/api/analytics/checkout-session?session_id=${encodeURIComponent(sessionId)}`, {
+          cache: 'no-store',
+        })
+
+        if (!response.ok) {
+          return
+        }
+
+        const data: {
+          transactionId: string
+          value: number
+          currency: string
+          shipping?: number
+          coupon?: string
+          items: AnalyticsItem[]
+        } = await response.json()
+
+        if (cancelled) {
+          return
+        }
+
+        setOrderValue(data.value)
+        trackPurchase({
+          transaction_id: data.transactionId,
+          value: data.value,
+          currency: data.currency,
+          shipping: data.shipping,
+          coupon: data.coupon,
+          items: data.items,
+        })
+
+        hasTrackedPurchase.current = true
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.setItem(storageKey, 'true')
+        }
+      } catch (error) {
+        console.error('Failed to track purchase event:', error)
+      }
+    }
+
+    trackCompletedPurchase()
+
+    return () => {
+      cancelled = true
+    }
+  }, [sessionId])
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 flex items-center justify-center p-4 sm:p-6">
@@ -35,6 +100,11 @@ function SuccessContent() {
             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-4 sm:mb-6">
               Thank you for your order. We'll send you a confirmation email shortly.
             </p>
+            {orderValue !== null && (
+              <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 mb-4 sm:mb-6 font-semibold">
+                Charged: ${orderValue.toFixed(2)}
+              </p>
+            )}
             {sessionId && (
               <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-500 mb-4 sm:mb-6 font-mono break-all px-2">
                 Session ID: {sessionId}

@@ -71,7 +71,7 @@ export default function WhyUsView({ onStartDesign }: WhyUsViewProps) {
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-bold uppercase tracking-wide">
                 <Layers className="w-3 h-3" /> Material Science
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">S33 Black Core Cardstock</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Premium cored cardstock Black Core Cardstock</h3>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                 Flimsy paper prototypes break immersion. Our cards are built on premium 330 GSM stock with a dedicated light-blocking black core layer.
               </p>

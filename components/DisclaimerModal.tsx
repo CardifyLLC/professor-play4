@@ -27,8 +27,10 @@ export default function DisclaimerModal() {
     setBleedChecked(false)
   }
 
+  const canProceed = copyrightChecked && (!hasBleedIssue || bleedChecked)
+
   const proceedToCheckout = () => {
-    if (copyrightChecked && bleedChecked) {
+    if (canProceed) {
       closeModal()
       // Trigger checkout modal via callback
       const checkoutCallback = (window as any).openCheckoutModal
@@ -77,18 +79,7 @@ export default function DisclaimerModal() {
               </span>
             </label>
 
-            <label className="flex items-start gap-2 sm:gap-3 cursor-pointer group touch-manipulation">
-              <input
-                type="checkbox"
-                checked={bleedChecked}
-                onChange={(e) => setBleedChecked(e.target.checked)}
-                className="mt-0.5 sm:mt-1 w-5 h-5 sm:w-6 sm:h-6 text-green-600 border-2 border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:bg-slate-800 dark:checked:bg-green-600 dark:checked:border-green-600 cursor-pointer transition-all flex-shrink-0 touch-manipulation"
-              />
-              <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
-                I verify that I understand the bleed requirements and I adjusted the cards to have 2.0mm bleed for accurate printing.
-              </span>
-            </label>
-          </div>
+                </div>
 
           {/* Bleed Warning - Only show if cards don't have bleed */}
           {hasBleedIssue && (
@@ -105,6 +96,17 @@ export default function DisclaimerModal() {
                   <p className="text-sm font-bold text-red-900 dark:text-red-200">
                     Are you SURE you want to proceed?
                   </p>
+                  <label className="mt-3 flex items-start gap-3 cursor-pointer group touch-manipulation">
+                    <input
+                      type="checkbox"
+                      checked={bleedChecked}
+                      onChange={(e) => setBleedChecked(e.target.checked)}
+                      className="mt-0.5 w-5 h-5 text-red-600 border-2 border-red-300 dark:border-red-700 rounded focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-slate-800 dark:checked:bg-red-600 dark:checked:border-red-600 cursor-pointer transition-all flex-shrink-0 touch-manipulation"
+                    />
+                    <span className="text-sm text-red-800 dark:text-red-300 leading-relaxed group-hover:text-red-900 dark:group-hover:text-red-200 transition-colors">
+                      I understand bleed is missing on some cards and still want to proceed.
+                    </span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -119,7 +121,7 @@ export default function DisclaimerModal() {
             </button>
             <button
               onClick={proceedToCheckout}
-              disabled={!copyrightChecked || !bleedChecked}
+              disabled={!canProceed}
               className={`flex-1 px-3 sm:px-4 py-3 sm:py-3 ${hasBleedIssue
                 ? 'bg-red-600 hover:bg-red-700 active:bg-red-800'
                 : 'bg-green-600 hover:bg-green-700 active:bg-green-800'

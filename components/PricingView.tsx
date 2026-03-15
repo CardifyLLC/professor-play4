@@ -15,7 +15,7 @@ export default function PricingView({ onStartDesign }: PricingViewProps) {
             Simple, Volume-Based Pricing
           </h2>
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto px-2">
-            Premium S33 cardstock. No hidden fees. Automatic discounts as your deck size grows.
+          Premium cored cardstock. No hidden fees. Automatic discounts as your deck size grows.
           </p>
         </div>
 
@@ -33,7 +33,7 @@ export default function PricingView({ onStartDesign }: PricingViewProps) {
                 <Check className="w-4 h-4 text-green-500 dark:text-green-400" /> 1 – 144 cards
               </li>
               <li className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500 dark:text-green-400" /> S33 Premium Stock
+                <Check className="w-4 h-4 text-green-500 dark:text-green-400" /> Premium cored cardstock
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500 dark:text-green-400" /> Full Color Print
@@ -57,7 +57,7 @@ export default function PricingView({ onStartDesign }: PricingViewProps) {
                 <Check className="w-4 h-4 text-blue-500 dark:text-blue-400" /> 145 – 500 cards
               </li>
               <li className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-blue-500 dark:text-blue-400" /> S33 Premium Stock
+                <Check className="w-4 h-4 text-blue-500 dark:text-blue-400" /> Premium cored cardstock
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-blue-500 dark:text-blue-400" /> Fast Production

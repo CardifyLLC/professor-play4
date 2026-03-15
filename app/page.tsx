@@ -14,6 +14,7 @@ import VersionsModal from '@/components/VersionsModal'
 import DisclaimerModal from '@/components/DisclaimerModal'
 import CheckoutModal from '@/components/CheckoutModal'
 import ImportModal from '@/components/ImportModal'
+import SiteFooter from '@/components/SiteFooter'
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<'landing' | 'how-it-works' | 'tutorial' | 'pricing' | 'why-us' | 'design'>('landing')
@@ -21,11 +22,44 @@ export default function Home() {
   const { deck } = useApp()
 
   useEffect(() => {
+    const requestedView = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('view')
+      : null
+
+    if (requestedView === 'design') {
+      setCurrentView('design')
+      setShowDesignStepper(true)
+      return
+    }
+
+    if (
+      requestedView === 'landing' ||
+      requestedView === 'how-it-works' ||
+      requestedView === 'tutorial' ||
+      requestedView === 'pricing' ||
+      requestedView === 'why-us'
+    ) {
+      setCurrentView(requestedView)
+      setShowDesignStepper(false)
+      return
+    }
+
+    if (deck.length > 0) {
+      setCurrentView('design')
+      setShowDesignStepper(true)
+      return
+    }
+
+    setCurrentView('landing')
+    setShowDesignStepper(false)
+  }, [])
+
+  useEffect(() => {
     if (deck.length > 0) {
       setCurrentView('design')
       setShowDesignStepper(true)
     }
-  }, [])
+  }, [deck.length])
 
   const startDesign = () => {
     setCurrentView('design')
@@ -93,6 +127,8 @@ export default function Home() {
       {showDesignStepper && (
         <DesignStepper onExit={showLanding} />
       )}
+
+      {!showDesignStepper && <SiteFooter />}
 
       <InspectorModal />
       <VersionsModal />

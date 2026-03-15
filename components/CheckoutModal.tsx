@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import { X, ShoppingCart, Lock, Ticket } from 'lucide-react'
 import { useApp } from '@/contexts/AppContext'
 import { compressImage } from '@/utils/imageCompression'
+import { trackBeginCheckout, type AnalyticsItem } from '@/utils/analytics'
 
 type AppliedCoupon = {
   code: string
@@ -55,11 +56,6 @@ export default function CheckoutModal() {
       ? `${fallback} (${details.join(', ')}).`
       : fallback
   }
-
-  useEffect(() => {
-    // Expose function to open modal globally
-    ; (window as any).openCheckoutModal = () => setIsOpen(true)
-  }, [])
 
   const closeModal = () => {
     setIsOpen(false)
@@ -115,6 +111,30 @@ export default function CheckoutModal() {
     ? Number((((cardsTotal + finishSurcharge) * appliedCoupon.discountPercent) / 100).toFixed(2))
     : 0
   const total = cardsTotal + finishSurcharge + shippingCost - discountAmount
+  const analyticsItems: AnalyticsItem[] = [{
+    item_id: 'custom-card-order',
+    item_name: 'Custom Card Order',
+    item_category: 'Playing Cards',
+    price: Number((cardsTotal + finishSurcharge - discountAmount).toFixed(2)),
+    quantity,
+  }]
+
+  useEffect(() => {
+    // Expose function to open modal globally
+    ; (window as any).openCheckoutModal = () => {
+      setIsOpen((prev) => {
+        if (!prev) {
+          trackBeginCheckout({
+            currency: 'USD',
+            value: Number(total.toFixed(2)),
+            coupon: appliedCoupon?.code,
+            items: analyticsItems,
+          })
+        }
+        return true
+      })
+    }
+  }, [analyticsItems, appliedCoupon?.code, total])
 
   const applyCoupon = async () => {
     const normalizedCode = couponCode.trim().toUpperCase()
@@ -241,6 +261,8 @@ export default function CheckoutModal() {
         id: card.id, // Include card ID
         quantity: card.quantity || 1,
         trimMm: card.trimMm || 0,
+        frontTrimMm: card.frontTrimMm ?? card.trimMm ?? 0,
+        backTrimMm: card.backTrimMm ?? card.trimMm ?? 0,
         bleedMm: card.bleedMm || 2,
         hasBleed: card.hasBleed || false,
         finish: card.finish || 'standard', // Include finish/effects (standard, rainbow, gloss, silver, etc.)

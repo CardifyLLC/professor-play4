@@ -46,7 +46,7 @@ export default function HowItWorksView({ onStartDesign }: HowItWorksViewProps) {
             </div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white">3. Order & Ship</h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-              Review your digital proof grid. Once approved, we print on premium S33 cardstock.
+              Review your digital proof grid. Once approved, we print on premium cored cardstock.
             </p>
           </div>
         </div>

@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
-import { ImagePlus, List, FileCode, Crop, Copy, ArrowRight, Scissors, RotateCcw, CheckCircle, AlertTriangle, X, Megaphone, ExternalLink, Info } from 'lucide-react'
-import { useApp } from '@/contexts/AppContext'
+import { ImagePlus, List, FileCode, Crop, Copy, ArrowRight, Scissors, RotateCcw, CheckCircle, AlertTriangle, X, Megaphone, ExternalLink, Info, ChevronDown } from 'lucide-react'
+import { useApp, type BleedSource } from '@/contexts/AppContext'
 import { processImage } from '@/utils/imageProcessing'
 import { handleFiles as processFiles } from '@/utils/fileHandling'
 import { handleXMLFile } from '@/utils/xmlHandling'
@@ -45,6 +45,7 @@ export default function Sidebar() {
   const [pendingBackOriginal, setPendingBackOriginal] = useState<string | null>(null)
   const [showSequentialBacksPrompt, setShowSequentialBacksPrompt] = useState(false)
   const pendingXmlBleedApply = useRef(false)
+  const shouldShowCornerWarning = deck.some(card => card.bleedSource === 'added')
 
   // Auto-apply -1.0mm bleed after XML import once deck state is updated
   useEffect(() => {
@@ -66,7 +67,7 @@ export default function Sidebar() {
       reader.onload = (e) => {
         const original = (e.target?.result as string) || ''
         // Store the original and show bleed prompt
-        const newBack = { ...globalBack, original, trimMm: 2.5, bleedMm: 2.0, hasBleed: false }
+        const newBack = { ...globalBack, original, trimMm: 2.5, bleedMm: 2.0, hasBleed: false, bleedSource: 'none' as const }
         setGlobalBack(newBack)
 
         processImage(original, 2.5, 2.0, false, (processed) => {
@@ -104,7 +105,7 @@ export default function Sidebar() {
 
           // Get the card's current bleed settings
           const card = deck[i]
-          const cardTrim = card.trimMm || 2.5
+          const cardTrim = card.backTrimMm ?? card.trimMm ?? 2.5
           const cardBleed = card.bleedMm !== undefined ? card.bleedMm : 2.0
           const cardHasBleed = card.hasBleed || false
 
@@ -134,6 +135,8 @@ export default function Sidebar() {
       setSequentialProcessing(false)
       setSequentialPercent(0)
     }, 500)
+
+    setCurrentStep(3)
   }
 
   const handleReset = () => {
@@ -149,6 +152,7 @@ export default function Sidebar() {
       trimMm: 2.5,
       bleedMm: 2.0,
       hasBleed: false,
+      bleedSource: 'none',
     })
     setUploadedXmlFile(null)
     setCurrentCardIndex(-1)
@@ -166,6 +170,9 @@ export default function Sidebar() {
     if (xmlInputRef.current) {
       xmlInputRef.current.value = ''
     }
+    if (sequentialBacksInputRef.current) {
+      sequentialBacksInputRef.current.value = ''
+    }
   }
 
   const cancelReset = () => {
@@ -180,12 +187,13 @@ export default function Sidebar() {
     const targetBleed = choice === 'no-bleed' ? 2.0 : -1.0
     const targetHasBleed = true
     const currentTrim = 2.5
+    const bleedSource: BleedSource = choice === 'no-bleed' ? 'added' : 'existing'
 
-    const newBack = { ...globalBack, original, trimMm: currentTrim, bleedMm: targetBleed, hasBleed: targetHasBleed }
+    const newBack = { ...globalBack, original, trimMm: currentTrim, bleedMm: targetBleed, hasBleed: targetHasBleed, bleedSource }
     setGlobalBack(newBack)
 
     processImage(original, currentTrim, targetBleed, targetHasBleed, (processed) => {
-      setGlobalBack(prev => ({ ...prev, processed, trimMm: currentTrim, bleedMm: targetBleed, hasBleed: targetHasBleed }))
+      setGlobalBack(prev => ({ ...prev, processed, trimMm: currentTrim, bleedMm: targetBleed, hasBleed: targetHasBleed, bleedSource }))
       setPendingBackOriginal(null)
       setBleedCompleteType(choice === 'no-bleed' ? 'added' : 'removed')
       setShowBleedCompleteNotification(true)
@@ -200,12 +208,15 @@ export default function Sidebar() {
     const targetBleed = choice === 'no-bleed' ? 2.0 : -1.0
     const targetHasBleed = true
     const currentTrim = 2.5
+    const bleedSource: BleedSource = choice === 'no-bleed' ? 'added' : 'existing'
 
     const total = deck.length
     if (total === 0) {
       setBleedProcessing(false)
       return
     }
+
+    const originalGlobalBack = globalBack.original
 
     const BATCH_SIZE = 5
     const updatedDeck = new Array(total)
@@ -215,8 +226,11 @@ export default function Sidebar() {
       const updatedCard = {
         ...card,
         trimMm: currentTrim,
+        frontTrimMm: currentTrim,
+        backTrimMm: currentTrim,
         bleedMm: targetBleed,
-        hasBleed: targetHasBleed
+        hasBleed: targetHasBleed,
+        bleedSource
       }
 
       const pFront = card.originalFront ? new Promise<string | null>((resolve) => {
@@ -255,6 +269,19 @@ export default function Sidebar() {
       }
 
       setDeck(updatedDeck)
+      if (originalGlobalBack) {
+        processImage(originalGlobalBack, currentTrim, targetBleed, targetHasBleed, (processed) => {
+          setGlobalBack(prev => ({
+            ...prev,
+            original: originalGlobalBack,
+            processed,
+            trimMm: currentTrim,
+            bleedMm: targetBleed,
+            hasBleed: targetHasBleed,
+            bleedSource
+          }))
+        })
+      }
       setBleedCompleteType(choice === 'no-bleed' ? 'added' : 'removed')
       setShowBleedCompleteNotification(true)
     } catch (error) {
@@ -379,14 +406,16 @@ export default function Sidebar() {
                     : 'We\'ve trimmed -1.0mm of bleed from all your cards to match our printing spec.'}
                 </p>
               </div>
-              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                    <strong className="text-slate-900 dark:text-white">Next Step:</strong> Please cycle through each card and adjust the <strong className="text-slate-900 dark:text-white">Corner Trim</strong> in the <strong className="text-slate-900 dark:text-white">Print Prep</strong> section so there are no visual imperfections in the corners.
-                  </p>
+              {bleedCompleteType === 'added' && (
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                      <strong className="text-slate-900 dark:text-white">Next Step:</strong> Please cycle through each card and adjust the <strong className="text-slate-900 dark:text-white">Corner Trim</strong> in the <strong className="text-slate-900 dark:text-white">Print Prep</strong> section so there are no visual imperfections in the corners.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Footer */}
@@ -694,7 +723,7 @@ export default function Sidebar() {
                 )}
 
 
-                {deck.length > 0 && (
+                {shouldShowCornerWarning && (
                   <div className="mt-6 mb-2 p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg animate-in fade-in slide-in-from-bottom-2 duration-500">
                     <div className="flex items-start gap-3">
                       <div className="bg-blue-100 dark:bg-blue-800 p-1.5 rounded-full shrink-0">
@@ -821,7 +850,6 @@ export default function Sidebar() {
   )
 }
 
-// ... (imports remain the same, relying on existing file content being kept if not replaced. I will target the PrintPrepPanel component specifically)
 
 function PrintPrepPanel() {
   const { currentStep, deck, currentCardIndex, setDeck, globalBack, setGlobalBack } = useApp()
@@ -831,12 +859,17 @@ function PrintPrepPanel() {
   const [isApplied, setIsApplied] = useState(false) // Persistent state for button
   const [showNotificationBanner, setShowNotificationBanner] = useState(false) // Temporary banner
   const [showApplyEmphasis, setShowApplyEmphasis] = useState(false) // Red emphasis when bleed is first activated
+  const [showAdvancedPrep, setShowAdvancedPrep] = useState(false)
 
   // Progress Bar State
   const [prepProcessing, setPrepProcessing] = useState(false)
   const [prepProcessingPercent, setPrepProcessingPercent] = useState(0)
 
   const target = currentStep === 2 ? globalBack : deck[currentCardIndex]
+  const getBleedSource = (nextHasBleed: boolean, previousSource?: BleedSource): BleedSource => {
+    if (!nextHasBleed) return 'none'
+    return previousSource === 'existing' ? 'existing' : 'added'
+  }
 
   // Reset applied state when deck length changes (new cards added)
   useEffect(() => {
@@ -870,6 +903,7 @@ function PrintPrepPanel() {
     const finalTrim = newTrim !== undefined ? newTrim : trimMm
     const finalBleedMm = newBleedMm !== undefined ? newBleedMm : bleedMm
     const finalHasBleed = newHasBleed !== undefined ? newHasBleed : hasBleed
+    const finalBleedSource = getBleedSource(finalHasBleed, target?.bleedSource)
 
     // Update state to trigger cut line overlay update in EditorView
     if (currentStep === 2) {
@@ -877,7 +911,8 @@ function PrintPrepPanel() {
         ...prev,
         trimMm: finalTrim,
         bleedMm: finalBleedMm,
-        hasBleed: finalHasBleed
+        hasBleed: finalHasBleed,
+        bleedSource: finalBleedSource
       }))
     } else {
       if (currentCardIndex < 0) return
@@ -888,8 +923,11 @@ function PrintPrepPanel() {
         newDeck[cardIdx] = {
           ...newDeck[cardIdx],
           trimMm: finalTrim,
+          frontTrimMm: finalTrim,
+          backTrimMm: finalTrim,
           bleedMm: finalBleedMm,
-          hasBleed: finalHasBleed
+          hasBleed: finalHasBleed,
+          bleedSource: finalBleedSource
         }
         return newDeck
       })
@@ -902,6 +940,7 @@ function PrintPrepPanel() {
     const finalTrim = newTrim !== undefined ? newTrim : trimMm
     const finalBleedMm = newBleedMm !== undefined ? newBleedMm : bleedMm
     const finalHasBleed = newHasBleed !== undefined ? newHasBleed : hasBleed
+    const finalBleedSource = getBleedSource(finalHasBleed, target?.bleedSource)
 
     if (currentStep === 2) {
       // Update global back
@@ -913,12 +952,13 @@ function PrintPrepPanel() {
           ...prev,
           trimMm: finalTrim,
           bleedMm: finalBleedMm,
-          hasBleed: finalHasBleed
+          hasBleed: finalHasBleed,
+          bleedSource: finalBleedSource
         }
 
         // Process image and update when done
         processImage(originalSrc, finalTrim, finalBleedMm, finalHasBleed, (processed) => {
-          setGlobalBack(prevBack => ({ ...prevBack, processed, trimMm: finalTrim, bleedMm: finalBleedMm, hasBleed: finalHasBleed }))
+          setGlobalBack(prevBack => ({ ...prevBack, processed, trimMm: finalTrim, bleedMm: finalBleedMm, hasBleed: finalHasBleed, bleedSource: finalBleedSource }))
         })
 
         return newBack
@@ -940,8 +980,11 @@ function PrintPrepPanel() {
         const updatedCard = {
           ...card,
           trimMm: finalTrim,
+          frontTrimMm: finalTrim,
+          backTrimMm: finalTrim,
           bleedMm: finalBleedMm,
-          hasBleed: finalHasBleed
+          hasBleed: finalHasBleed,
+          bleedSource: finalBleedSource
         }
 
         // Process front image
@@ -953,8 +996,10 @@ function PrintPrepPanel() {
                 ...newDeck[cardIdx],
                 front: processed,
                 trimMm: finalTrim,
+                frontTrimMm: finalTrim,
                 bleedMm: finalBleedMm,
-                hasBleed: finalHasBleed
+                hasBleed: finalHasBleed,
+                bleedSource: finalBleedSource
               }
             }
             return newDeck
@@ -971,8 +1016,10 @@ function PrintPrepPanel() {
                   ...newDeck[cardIdx],
                   back: processedBack,
                   trimMm: finalTrim,
+                  backTrimMm: finalTrim,
                   bleedMm: finalBleedMm,
-                  hasBleed: finalHasBleed
+                  hasBleed: finalHasBleed,
+                  bleedSource: finalBleedSource
                 }
               }
               return newDeck
@@ -1012,6 +1059,7 @@ function PrintPrepPanel() {
     const currentTrim = trimMm
     const currentBleed = bleedMm
     const currentHasBleed = hasBleed
+    const currentBleedSource = getBleedSource(currentHasBleed, target?.bleedSource)
     const total = deck.length
     let completed = 0
 
@@ -1024,8 +1072,11 @@ function PrintPrepPanel() {
       const updatedCard = {
         ...card,
         trimMm: currentTrim,
+        frontTrimMm: currentTrim,
+        backTrimMm: currentTrim,
         bleedMm: currentBleed,
-        hasBleed: currentHasBleed
+        hasBleed: currentHasBleed,
+        bleedSource: currentBleedSource
       }
 
       const pFront = card.originalFront ? new Promise<string | null>((resolve) => {
@@ -1126,139 +1177,150 @@ function PrintPrepPanel() {
           <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Adjusts bleed start point (removes white corners)</p>
         </div>
 
-        <div>
-          <div className="flex justify-between items-center mb-1">
-            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">Bleed Adjustment</label>
-            <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setShowAdvancedPrep(prev => !prev)}
+          className="w-full flex items-center justify-between rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-left text-sm font-semibold text-slate-700 dark:text-slate-200"
+        >
+          <span>Advanced</span>
+          <ChevronDown className={`w-4 h-4 transition-transform ${showAdvancedPrep ? 'rotate-180' : ''}`} />
+        </button>
+
+        {showAdvancedPrep && (
+          <div className="space-y-4 rounded-md border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/40 p-3">
+
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">Bleed Adjustment</label>
+                <div className="flex items-center gap-1">
+                  <input
+                    id="bleed-fine-tune"
+                    type="number"
+                    step="0.05"
+                    value={bleedMm}
+                    onChange={(e) => {
+                      const newBleed = parseFloat(e.target.value)
+                      setBleedMm(newBleed)
+                      setIsApplied(false) // Reset applied state when user changes settings
+                      // Sync slider
+                      const bleedSlider = document.getElementById('bleed-slider') as HTMLInputElement
+                      if (bleedSlider) {
+                        const clampedValue = Math.max(-4, Math.min(4, newBleed))
+                        bleedSlider.value = clampedValue.toString()
+                      }
+                      // Update cut line overlay visually
+                      updateCutLineOverlay(undefined, newBleed)
+                      // If bleed is active, reprocess image with new bleed value
+                      if (hasBleed) {
+                        updatePrepSettings('input', undefined, newBleed)
+                      }
+                    }}
+                    className="w-16 text-right text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-1 py-0.5 focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-300"
+                  />
+                  <span className="text-[10px] text-slate-400 font-mono">mm</span>
+                </div>
+              </div>
               <input
-                id="bleed-fine-tune"
-                type="number"
-                step="0.05"
+                id="bleed-slider"
+                type="range"
+                min="-4"
+                max="4"
+                step="0.25"
                 value={bleedMm}
                 onChange={(e) => {
                   const newBleed = parseFloat(e.target.value)
                   setBleedMm(newBleed)
                   setIsApplied(false) // Reset applied state when user changes settings
-                  // Sync slider
-                  const bleedSlider = document.getElementById('bleed-slider') as HTMLInputElement
-                  if (bleedSlider) {
-                    const clampedValue = Math.max(-4, Math.min(4, newBleed))
-                    bleedSlider.value = clampedValue.toString()
-                  }
+                  // Sync input field
+                  const bleedInput = document.getElementById('bleed-fine-tune') as HTMLInputElement
+                  if (bleedInput) bleedInput.value = newBleed.toString()
                   // Update cut line overlay visually
                   updateCutLineOverlay(undefined, newBleed)
                   // If bleed is active, reprocess image with new bleed value
                   if (hasBleed) {
-                    updatePrepSettings('input', undefined, newBleed)
+                    updatePrepSettings('slider', undefined, newBleed)
                   }
                 }}
-                className="w-16 text-right text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-1 py-0.5 focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-300"
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
               />
-              <span className="text-[10px] text-slate-400 font-mono">mm</span>
+              <div className="flex justify-between text-[9px] text-slate-400 font-medium px-1 mt-1">
+                <span>Trim (-4mm)</span>
+                <span className="text-blue-600 dark:text-blue-400 font-bold">Target (+2.0mm)</span>
+                <span>Extend (+4mm)</span>
+              </div>
             </div>
-          </div>
-          <input
-            id="bleed-slider"
-            type="range"
-            min="-4"
-            max="4"
-            step="0.25"
-            value={bleedMm}
-            onChange={(e) => {
-              const newBleed = parseFloat(e.target.value)
-              setBleedMm(newBleed)
-              setIsApplied(false) // Reset applied state when user changes settings
-              // Sync input field
-              const bleedInput = document.getElementById('bleed-fine-tune') as HTMLInputElement
-              if (bleedInput) bleedInput.value = newBleed.toString()
-              // Update cut line overlay visually
-              updateCutLineOverlay(undefined, newBleed)
-              // If bleed is active, reprocess image with new bleed value
-              if (hasBleed) {
-                updatePrepSettings('slider', undefined, newBleed)
-              }
-            }}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-[9px] text-slate-400 font-medium px-1 mt-1">
-            <span>Trim (-4mm)</span>
-            <span className="text-blue-600 dark:text-blue-400 font-bold">Target (+2.0mm)</span>
-            <span>Extend (+4mm)</span>
-          </div>
-        </div>
 
-        <button
-          onClick={toggleBleed}
-          className={`w-full border py-2 rounded-md text-xs font-bold transition-colors flex items-center justify-center gap-2 ${hasBleed
-            ? 'bg-blue-600 text-white border-blue-600'
-            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600'
-            }`}
-        >
-          <Crop className="w-3 h-3" /> {hasBleed ? 'Bleed Active' : 'Add Bleed'}
-        </button>
-
-        {/* Apply to All Cards - Moved here, directly below Add Bleed */}
-        {prepProcessing ? (
-          <div className="w-full bg-blue-100 dark:bg-blue-900/30 rounded-md p-2 mt-2">
-            <div className="flex justify-between text-xs font-bold text-blue-700 dark:text-blue-400 mb-1">
-              <span>Applying...</span>
-              <span>{prepProcessingPercent}%</span>
-            </div>
-            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${prepProcessingPercent}%` }}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="mt-2">
             <button
-              onClick={() => {
-                setShowApplyEmphasis(false)
-                applyPrepToAll()
-              }}
-              disabled={deck.length === 0}
-              className={`w-full py-2 rounded-md text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${showApplyEmphasis && !isApplied
-                ? 'bg-red-600 hover:bg-red-700 text-white border border-red-600 animate-pulse'
-                : isApplied
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
-                  : 'bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
+              onClick={toggleBleed}
+              className={`w-full border py-2 rounded-md text-xs font-bold transition-colors flex items-center justify-center gap-2 ${hasBleed
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600'
                 }`}
             >
-              {isApplied ? (
-                <>
-                  <CheckCircle className="w-3 h-3" /> Applied
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3 h-3" /> Apply to All Cards
-                </>
-              )}
+              <Crop className="w-3 h-3" /> {hasBleed ? 'Bleed Active' : 'Add Bleed'}
             </button>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-1">
-              Copies current trim/bleed settings to entire deck
-            </p>
+
+            {prepProcessing ? (
+              <div className="w-full bg-blue-100 dark:bg-blue-900/30 rounded-md p-2 mt-2">
+                <div className="flex justify-between text-xs font-bold text-blue-700 dark:text-blue-400 mb-1">
+                  <span>Applying...</span>
+                  <span>{prepProcessingPercent}%</span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${prepProcessingPercent}%` }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2">
+                <button
+                  onClick={() => {
+                    setShowApplyEmphasis(false)
+                    applyPrepToAll()
+                  }}
+                  disabled={deck.length === 0}
+                  className={`w-full py-2 rounded-md text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${showApplyEmphasis && !isApplied
+                    ? 'bg-red-600 hover:bg-red-700 text-white border border-red-600 animate-pulse'
+                    : isApplied
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+                      : 'bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
+                    }`}
+                >
+                  {isApplied ? (
+                    <>
+                      <CheckCircle className="w-3 h-3" /> Applied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" /> Apply to All Cards
+                    </>
+                  )}
+                </button>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-1">
+                  Copies current trim/bleed settings to entire deck
+                </p>
+              </div>
+            )}
+
+            <div className="bg-blue-100/50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-2.5 space-y-2">
+              <div className="flex gap-2 items-start">
+                <Crop className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] leading-tight text-slate-600 dark:text-slate-400">
+                  <strong className="text-slate-800 dark:text-slate-200">Standard (+2.0mm):</strong> We need a{' '}
+                  <strong>2.0mm bleed</strong> extension past the cut line for reliable borderless printing.
+                </p>
+              </div>
+              <div className="flex gap-2 items-start pt-1 border-t border-blue-200 dark:border-blue-800">
+                <Scissors className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
+                <p className="text-[10px] leading-tight text-slate-600 dark:text-slate-400">
+                  <strong className="text-slate-800 dark:text-slate-200">3mm bleed added (-1.0mm):</strong> These images often have large bleeds. Set adjustment to <strong>-1.0mm</strong> to trim them to our spec.
+                </p>
+              </div>
+            </div>
           </div>
         )}
-
-        <div className="bg-blue-100/50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-2.5 space-y-2">
-          <div className="flex gap-2 items-start">
-            <Crop className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <p className="text-[10px] leading-tight text-slate-600 dark:text-slate-400">
-              <strong className="text-slate-800 dark:text-slate-200">Standard (+2.0mm):</strong> We need a{' '}
-              <strong>2.0mm bleed</strong> extension past the cut line for reliable borderless printing.
-            </p>
-          </div>
-          <div className="flex gap-2 items-start pt-1 border-t border-blue-200 dark:border-blue-800">
-            <Scissors className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
-            <p className="text-[10px] leading-tight text-slate-600 dark:text-slate-400">
-              <strong className="text-slate-800 dark:text-slate-200">3mm bleed added (-1.0mm):</strong> These images often have large bleeds. Set adjustment to <strong>-1.0mm</strong> to trim them to our spec.
-            </p>
-          </div>
-        </div>
-
-
       </div>
     </div>
   )

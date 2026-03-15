@@ -88,7 +88,7 @@ export default function LandingView({ onStartDesign }: LandingViewProps) {
             </h1>
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-lg">
               Design and print your custom card games and TCG prototypes with TCGPlaytest.
-              Fast shipping, no tariffs, and premium quality S33 cardstock.
+              Fast shipping, no tariffs, and premium quality cored cardstock.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 sm:pt-4">
               <button

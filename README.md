@@ -64,6 +64,22 @@ Enable these Stripe events for this app:
 
 If you want the minimum setup, enable only `checkout.session.completed`.
 
+### Google Analytics / Google Ads
+
+Add these public environment variables:
+
+```text
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+NEXT_PUBLIC_GOOGLE_ADS_ID=AW-XXXXXXXXXX
+```
+
+The app tracks:
+
+- `begin_checkout` when the checkout modal opens
+- `purchase` on `/success` after Stripe confirms payment
+
+For Google Ads, import the GA4 `begin_checkout` and `purchase` events instead of relying on URL-only conversions.
+
 ## Project Structure
 
 ```

@@ -74,6 +74,8 @@ export default function InspectorModal() {
 
   const card = deck[inspectorIndex]
   const isSilverFinish = card.finish && card.finish.includes('silver')
+  const frontTrimMm = card.frontTrimMm ?? card.trimMm ?? 2.5
+  const backTrimMm = card.backTrimMm ?? card.trimMm ?? 2.5
 
   const closeInspector = () => {
     setInspectorIndex(-1)
@@ -249,6 +251,7 @@ export default function InspectorModal() {
         newDeck[inspectorIndex] = {
           ...newDeck[inspectorIndex],
           originalBack,
+          backTrimMm: newDeck[inspectorIndex].backTrimMm ?? newDeck[inspectorIndex].trimMm ?? 2.5,
         }
         return newDeck
       })
@@ -256,7 +259,7 @@ export default function InspectorModal() {
       // Process the back image with current card's trim/bleed settings
       processImage(
         originalBack,
-        currentCard.trimMm || 2.5,
+        currentCard.backTrimMm ?? currentCard.trimMm ?? 2.5,
         currentCard.bleedMm || 2.0,
         currentCard.hasBleed || false,
         (processed) => {
@@ -265,6 +268,7 @@ export default function InspectorModal() {
             newDeck[inspectorIndex] = {
               ...newDeck[inspectorIndex],
               back: processed,
+              backTrimMm: currentCard.backTrimMm ?? currentCard.trimMm ?? 2.5,
             }
             return newDeck
           })
@@ -283,9 +287,79 @@ export default function InspectorModal() {
         ...newDeck[inspectorIndex],
         back: null,
         originalBack: null,
+        backTrimMm: newDeck[inspectorIndex].trimMm ?? 2.5,
       }
       return newDeck
     })
+  }
+
+  const updateFaceTrim = (face: 'front' | 'back', value: number) => {
+    const currentCard = deck[inspectorIndex]
+    if (!currentCard) return
+
+    if (face === 'front') {
+      const originalFront = currentCard.originalFront
+      if (!originalFront) return
+
+      setDeck((prev) => {
+        const newDeck = [...prev]
+        newDeck[inspectorIndex] = {
+          ...newDeck[inspectorIndex],
+          frontTrimMm: value,
+        }
+        return newDeck
+      })
+
+      processImage(
+        originalFront,
+        value,
+        currentCard.bleedMm || 2.0,
+        currentCard.hasBleed || false,
+        (processed) => {
+          setDeck((prev) => {
+            const newDeck = [...prev]
+            newDeck[inspectorIndex] = {
+              ...newDeck[inspectorIndex],
+              front: processed,
+              frontTrimMm: value,
+            }
+            return newDeck
+          })
+        }
+      )
+      return
+    }
+
+    const backSource = currentCard.originalBack || globalBack.original || globalBack.processed
+    if (!backSource) return
+
+    setDeck((prev) => {
+      const newDeck = [...prev]
+      newDeck[inspectorIndex] = {
+        ...newDeck[inspectorIndex],
+        originalBack: currentCard.originalBack || globalBack.original || globalBack.processed,
+        backTrimMm: value,
+      }
+      return newDeck
+    })
+
+    processImage(
+      backSource,
+      value,
+      currentCard.bleedMm || 2.0,
+      currentCard.hasBleed || false,
+        (processed) => {
+          setDeck((prev) => {
+            const newDeck = [...prev]
+            newDeck[inspectorIndex] = {
+              ...newDeck[inspectorIndex],
+              back: processed,
+              backTrimMm: value,
+            }
+          return newDeck
+        })
+      }
+    )
   }
 
   return (
@@ -360,6 +434,22 @@ export default function InspectorModal() {
                     No front image
                   </div>
                 )}
+              </div>
+
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Corner Trim</label>
+                  <span className="text-xs font-mono text-slate-700 dark:text-slate-300">{frontTrimMm}mm</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="5"
+                  step="0.25"
+                  value={frontTrimMm}
+                  onChange={(e) => updateFaceTrim('front', parseFloat(e.target.value))}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                />
               </div>
 
               {/* Silver Masking Tools Panel */}
@@ -517,6 +607,24 @@ export default function InspectorModal() {
                   </div>
                 )}
               </div>
+
+              {(card.back || globalBack.processed) && (
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Corner Trim</label>
+                    <span className="text-xs font-mono text-slate-700 dark:text-slate-300">{backTrimMm}mm</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="5"
+                    step="0.25"
+                    value={backTrimMm}
+                    onChange={(e) => updateFaceTrim('back', parseFloat(e.target.value))}
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+              )}
 
               {/* Hidden file input for back upload */}
               <input

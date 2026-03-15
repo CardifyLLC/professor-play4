@@ -118,7 +118,7 @@ export default function VersionsModal() {
     // Process the new image with current card's trim/bleed settings
     processImage(
       largeImgUrl,
-      currentCard.trimMm || 2.5,
+      currentCard.frontTrimMm ?? currentCard.trimMm ?? 2.5,
       currentCard.bleedMm || 2.0,
       currentCard.hasBleed || false,
       (processed) => {
@@ -127,6 +127,7 @@ export default function VersionsModal() {
           newDeck[activeVersionIndex] = {
             ...newDeck[activeVersionIndex],
             front: processed,
+            frontTrimMm: currentCard.frontTrimMm ?? currentCard.trimMm ?? 2.5,
           }
           return newDeck
         })
