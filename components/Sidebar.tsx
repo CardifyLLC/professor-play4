@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import { ImagePlus, List, FileCode, Crop, Copy, ArrowRight, Scissors, RotateCcw, CheckCircle, AlertTriangle, X, Megaphone, ExternalLink, Info, ChevronDown } from 'lucide-react'
-import { useApp, type BleedSource } from '@/contexts/AppContext'
+import { DEFAULT_GLOBAL_BACK_SRC, useApp, type BleedSource } from '@/contexts/AppContext'
 import { processImage } from '@/utils/imageProcessing'
 import { handleFiles as processFiles } from '@/utils/fileHandling'
 import { handleXMLFile } from '@/utils/xmlHandling'
@@ -147,8 +147,8 @@ export default function Sidebar() {
     // Reset all state to initial values
     setDeck([])
     setGlobalBack({
-      original: null,
-      processed: null,
+      original: DEFAULT_GLOBAL_BACK_SRC,
+      processed: DEFAULT_GLOBAL_BACK_SRC,
       trimMm: 2.5,
       bleedMm: 2.0,
       hasBleed: false,
@@ -177,6 +177,24 @@ export default function Sidebar() {
 
   const cancelReset = () => {
     setShowResetConfirm(false)
+  }
+
+  const applyDefaultBack = () => {
+    setPendingBackOriginal(null)
+    setShowBackBleedPrompt(false)
+    const nextBack = {
+      original: DEFAULT_GLOBAL_BACK_SRC,
+      processed: DEFAULT_GLOBAL_BACK_SRC,
+      trimMm: globalBack.trimMm,
+      bleedMm: globalBack.bleedMm,
+      hasBleed: globalBack.hasBleed,
+      bleedSource: globalBack.bleedSource ?? 'none',
+    }
+
+    setGlobalBack(nextBack)
+    processImage(nextBack.original, nextBack.trimMm, nextBack.bleedMm, nextBack.hasBleed, (processed) => {
+      setGlobalBack(prev => ({ ...prev, processed: processed || DEFAULT_GLOBAL_BACK_SRC }))
+    })
   }
 
   const handleBackBleedChoice = (choice: 'no-bleed' | 'has-bleed') => {
@@ -759,7 +777,7 @@ export default function Sidebar() {
               <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Instructions</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 {currentStep === 2
-                  ? 'Upload an image here to set a common back for ALL cards.'
+                  ? 'Upload your own back above, or use the single built-in TCGPlaytest back below.'
                   : 'Upload your card art here. Each image will create a new card in your deck.'}
               </p>
             </div>
@@ -823,9 +841,33 @@ export default function Sidebar() {
             <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
               Choose Background
             </h4>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-2">
-              Upload an image above to set as card back
-            </p>
+            <button
+              type="button"
+              onClick={applyDefaultBack}
+              className={`w-full overflow-hidden rounded-lg border text-left transition-all ${globalBack.original === DEFAULT_GLOBAL_BACK_SRC
+                ? 'border-blue-500 ring-2 ring-blue-500/20'
+                : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
+                }`}
+            >
+              <div className="aspect-[63/88] w-full bg-slate-950">
+                <img
+                  src={DEFAULT_GLOBAL_BACK_SRC}
+                  alt="Default TCGPlaytest card back"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="flex items-center justify-between gap-3 bg-white px-3 py-2 dark:bg-slate-900">
+                <div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">TCGPlaytest Default</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">The only built-in back option</p>
+                </div>
+                {globalBack.original === DEFAULT_GLOBAL_BACK_SRC && (
+                  <span className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                    Selected
+                  </span>
+                )}
+              </div>
+            </button>
           </div>
         )}
 

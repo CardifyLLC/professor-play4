@@ -15,7 +15,7 @@ export default function EditorView() {
   } = useApp()
 
   const currentCard = currentStep === 2 ? null : deck[currentCardIndex]
-  const imageToShow = currentStep === 2 ? globalBack.processed : currentCard?.front
+  const imageToShow = currentStep === 2 ? (globalBack.processed || globalBack.original) : currentCard?.front
   const cutLineRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
 

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
 
 export type BleedSource = 'none' | 'added' | 'existing'
+export const DEFAULT_GLOBAL_BACK_SRC = '/card.jpeg'
 
 export interface Card {
   id: string
@@ -71,8 +72,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined)
 export function AppProvider({ children }: { children: ReactNode }) {
   const [deck, setDeck] = useState<Card[]>([])
   const [globalBack, setGlobalBack] = useState<GlobalBack>({
-    original: null,
-    processed: null,
+    original: DEFAULT_GLOBAL_BACK_SRC,
+    processed: DEFAULT_GLOBAL_BACK_SRC,
     trimMm: 2.5,
     bleedMm: 2.0,
     hasBleed: false,
