@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
+import { Suspense } from 'react'
 import './globals.css'
 import BrowserCompatibility from '@/components/BrowserCompatibility'
 import { ExtensionErrorBoundary } from '@/components/ExtensionErrorBoundary'
@@ -84,7 +85,9 @@ export default function RootLayout({
       </head>
       <body className="text-slate-800 bg-white dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
         <AppProvider>
-          <GoogleAnalytics />
+          <Suspense fallback={null}>
+            <GoogleAnalytics />
+          </Suspense>
           <BrowserCompatibility />
           <ExtensionErrorBoundary>
             {children}
